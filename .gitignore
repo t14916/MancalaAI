@@ -1,0 +1,11 @@
+# Python Virtual Environment from Pycharm #
+# ignore the virtual environment information from pycharm
+/venv/*
+
+# Pycharm associated files #
+# ignore other files associated with pycharm
+/.idea/*
+
+# Ignore Pycharm Cache
+/__pycache__/
+© 2019 GitHub, Inc.

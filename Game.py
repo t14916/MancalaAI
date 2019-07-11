@@ -7,7 +7,7 @@ class Game:
 
     def __init__(self):
         self.board = GameBoard()
-        self.nn = NeuralNetwork([15, 50, 6], 0.5)
+        self.nn = NeuralNetwork([15, 200, 6], 0.3)
 
     def turn(self, player, pit):
         next_player = self.board.move_marbles(player, pit)
@@ -48,12 +48,16 @@ class Game:
 
     def train_neural_network(self, game_runs):
 
+        game_input_history = []
+        game_target_history = []
         player = 0
         reset_counter = 0
         turn_counter = 0
         ai_win_counter = 0
         ai_player = 0
+
         print("Welcome to the game of Mancala! this training session will continue for {} runs.".format(game_runs))
+
         while reset_counter < game_runs:
             initial_score = self.board.get_score()
             turn_counter += 1
@@ -61,18 +65,19 @@ class Game:
             if player == ai_player:
                 ai_input = self.board.get_board()
                 ai_input.append(ai_player)
+                game_input_history.append(ai_input)
                 ai_decision = self.nn.query(ai_input)
 
-                sorted_decision = list(enumerate(ai_decision.flat()))
+                sorted_decision = list(enumerate(ai_decision.flatten()))
                 sorted_decision.sort(key=lambda x: x[1])
 
                 for i in range(len(sorted_decision)):
-                    pit = sorted_decision[-(i + 1)][1] + 1
+                    pit = sorted_decision[-(i + 1)][0] + 1
                     next_player = self.turn(player, pit)
 
                     if next_player == 2:
                         next_player = ai_player
-                        print(self.board.get_score())
+                        # print(self.board.get_score())
                     else:
                         break
 
@@ -89,7 +94,8 @@ class Game:
                 else:
                     target_list[pit - 1] = 0.01
 
-                self.nn.train(ai_input, target_list)
+                game_target_history.append(target_list)
+                # self.nn.train(ai_input, target_list)
 
                 # print("Turn {} has passed. NN scores {} points this round.".format(turn_counter, score_diff[player]))
             else:
@@ -110,11 +116,19 @@ class Game:
 
                 if winner == ai_player:
                     ai_win_counter += 1
+
+                for i in range(len(game_input_history)):
+                    self.nn.train(game_input_history[i], game_target_history[i])
+
+                game_target_history = []
+                game_input_history = []
                 self.reset_game()
                 reset_counter += 1
                 turn_counter = 0
                 ai_player = -ai_player + 1
                 next_player = 0
+                if reset_counter > 0 and reset_counter * 100 / game_runs % 10 == 0:
+                    print("Training is {}% finished!".format(reset_counter * 100 / game_runs))
 
             player = next_player
 
@@ -127,12 +141,14 @@ class Game:
         turn_counter = 0
         ai_win_counter = 0
         ai_player = 0
+        next_player = 1
+
         print("Welcome to the game of Mancala! AI will start first")
         while reset_counter < game_runs:
             initial_score = self.board.get_score()
             turn_counter += 1
 
-            print(self.board.text_display_board())
+            # print(self.board.text_display_board())
             if player == ai_player:
                 ai_input = self.board.get_board()
                 ai_input.append(ai_player)
@@ -147,13 +163,13 @@ class Game:
 
                     if next_player == 2:
                         next_player = ai_player
-                        print(self.board.get_score())
+                        # print(self.board.get_score())
                     else:
                         break
 
                 post_turn_score = self.board.get_score()
                 score_diff = [post_turn_score[i] - initial_score[i] for i in range(len(initial_score))]
-                print(post_turn_score)
+                # print(post_turn_score)
                 print("Turn {} has passed. NN scores {} points this round.".format(turn_counter, score_diff[player]))
             else:
                 pit = Game.random_ai()

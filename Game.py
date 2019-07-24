@@ -46,10 +46,28 @@ class Game:
     def random_ai():
         return random.randint(1, 6)
 
+    @staticmethod
+    def discount_rewards(reward_history, d_rate):
+        discounted_rewards = []
+
+        accumulated_reward = 0
+        for i in range(1, len(reward_history) + 1):
+            accumulated_reward = reward_history[-i] + accumulated_reward * d_rate
+            discounted_rewards.insert(0, accumulated_reward)
+            # print(accumulated_reward)
+
+        # normalize rewards before returning
+        # print(discounted_rewards)
+        discounted_rewards /= np.std(discounted_rewards)
+        discounted_rewards -= np.mean(discounted_rewards)
+
+        return discounted_rewards
+
     def train_neural_network(self, game_runs):
 
         game_input_history = []
         game_target_history = []
+        reward_history = []
         player = 0
         reset_counter = 0
         turn_counter = 0
@@ -61,7 +79,6 @@ class Game:
         while reset_counter < game_runs:
             initial_score = self.board.get_score()
             turn_counter += 1
-
             if player == ai_player:
                 ai_input = self.board.get_board()
                 ai_input.append(ai_player)
@@ -77,7 +94,7 @@ class Game:
 
                     if next_player == 2:
                         next_player = ai_player
-                        # print(self.board.get_score())
+                        #print(self.board.get_score())
                     else:
                         break
 
@@ -91,8 +108,10 @@ class Game:
                 # target_list = np.zeros(6)
                 if score_diff[player] > 0:
                     target_list[pit - 1] = 0.99
+                    reward_history.append(0.5 * score_diff[player])
                 else:
                     target_list[pit - 1] = 0.01
+                    reward_history.append(-1)
 
                 game_target_history.append(target_list)
                 # self.nn.train(ai_input, target_list)
@@ -116,9 +135,13 @@ class Game:
 
                 if winner == ai_player:
                     ai_win_counter += 1
+                    reward_history = [reward * 1.5 for reward in reward_history]
+
+                discounted_rewards = Game.discount_rewards(reward_history, 0.2)
 
                 for i in range(len(game_input_history)):
-                    self.nn.train(game_input_history[i], game_target_history[i])
+                    self.nn.train(game_input_history[i], [target * discounted_rewards[i]
+                                                          for target in game_target_history[i]])
 
                 game_target_history = []
                 game_input_history = []
@@ -202,5 +225,5 @@ class Game:
 newgame = Game()
 
 #newgame.text_play()
-newgame.train_neural_network(100000)
+newgame.train_neural_network(10000)
 newgame.test_neural_network(1000)

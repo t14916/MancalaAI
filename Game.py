@@ -57,9 +57,13 @@ class Game:
             # print(accumulated_reward)
 
         # normalize rewards before returning
+
         # print(discounted_rewards)
-        discounted_rewards /= np.std(discounted_rewards)
         discounted_rewards -= np.mean(discounted_rewards)
+        std_dev = np.std(discounted_rewards)
+        if std_dev != 0:
+            discounted_rewards /= std_dev
+        # print(discounted_rewards)
 
         return discounted_rewards
 
@@ -137,7 +141,7 @@ class Game:
                     ai_win_counter += 1
                     reward_history = [reward * 1.5 for reward in reward_history]
 
-                discounted_rewards = Game.discount_rewards(reward_history, 0.2)
+                discounted_rewards = Game.discount_rewards(reward_history, 0.5)
 
                 for i in range(len(game_input_history)):
                     self.nn.train(game_input_history[i], [target * discounted_rewards[i]
@@ -145,6 +149,7 @@ class Game:
 
                 game_target_history = []
                 game_input_history = []
+                reward_history = []
                 self.reset_game()
                 reset_counter += 1
                 turn_counter = 0
@@ -225,5 +230,5 @@ class Game:
 newgame = Game()
 
 #newgame.text_play()
-newgame.train_neural_network(10000)
+newgame.train_neural_network(100000)
 newgame.test_neural_network(1000)

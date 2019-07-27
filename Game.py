@@ -3,6 +3,7 @@ from NeuralNetwork import *
 import numpy as np
 import random
 
+
 class Game:
 
     def __init__(self):
@@ -42,8 +43,66 @@ class Game:
     def reset_game(self):
         self.board = GameBoard()
 
+    def test_against_random_agent(self, agent, num_games):
+        player = 0
+        reset_counter = 0
+        turn_counter = 0
+        agent_win_counter = 0
+        agent_player = 0
+        next_player = 1
+
+        while reset_counter < num_games:
+            # initial_score = self.board.get_score()
+            turn_counter += 1
+
+            # print(self.board.text_display_board())
+            if player == agent_player:
+                agent_input = self.board.get_board()
+                agent_input.append(agent_player)
+                agent_decision = agent.query(agent_input)
+
+                sorted_decision = list(enumerate(agent_decision.flatten()))
+                sorted_decision.sort(key=lambda x: x[1])
+
+                for i in range(len(sorted_decision)):
+                    pit = sorted_decision[-(i + 1)][0] + 1
+                    next_player = self.turn(player, pit)
+
+                    if next_player == 2:
+                        next_player = agent_player
+                        # print(self.board.get_score())
+                    else:
+                        break
+
+                # post_turn_score = self.board.get_score()
+                # score_diff = [post_turn_score[i] - initial_score[i] for i in range(len(initial_score))]
+            else:
+                pit = Game.random_agent()
+                next_player = self.turn(player, pit)
+                if next_player == 2:
+                    next_player = -agent_player + 1
+
+            if next_player == -1:
+                score = self.board.get_score()
+                final_marbles = self.board.get_sum_rows()
+
+                score = [score[i] + final_marbles[i] for i in range(len(score))]
+                winner = max(enumerate(score), key=lambda x: x[1])[0]
+
+                if winner == agent_player:
+                    agent_win_counter += 1
+                self.reset_game()
+                reset_counter += 1
+                turn_counter = 0
+                agent_player = -agent_player + 1
+                next_player = 0
+
+            player = next_player
+
+        return agent_win_counter / num_games
+
     @staticmethod
-    def random_ai():
+    def random_agent():
         return random.randint(1, 6)
 
     @staticmethod
@@ -122,7 +181,7 @@ class Game:
 
                 # print("Turn {} has passed. NN scores {} points this round.".format(turn_counter, score_diff[player]))
             else:
-                pit = Game.random_ai()
+                pit = Game.random_agent()
                 next_player = self.turn(player, pit)
                 if next_player == 2:
                     next_player = -ai_player + 1
@@ -200,7 +259,7 @@ class Game:
                 # print(post_turn_score)
                 print("Turn {} has passed. NN scores {} points this round.".format(turn_counter, score_diff[player]))
             else:
-                pit = Game.random_ai()
+                pit = Game.random_agent()
                 next_player = self.turn(player, pit)
                 if next_player == 2:
                     next_player = -ai_player + 1
@@ -230,5 +289,5 @@ class Game:
 newgame = Game()
 
 #newgame.text_play()
-newgame.train_neural_network(100000)
-newgame.test_neural_network(1000)
+# newgame.train_neural_network(100000)
+# newgame.test_neural_network(1000)

@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.special as sp
 
+
 class NeuralNetwork:
 
     """
@@ -9,7 +10,7 @@ class NeuralNetwork:
 
     NOTE: This version of Neural Network is tuned to train for Mancala.
     """
-    def __init__(self, layers,  learning_rate = 0.5):
+    def __init__(self, layers,  learning_rate=0.5):
         """"
         initializer for neuralNetwork class, requires learning rate and a variable number of layers, which
         which are given by list layers for which the length of the list represents the # of layers
